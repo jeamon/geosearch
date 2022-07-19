@@ -1,0 +1,47 @@
+# Build stage.
+FROM golang:1.17-alpine as builder
+
+# Add git tool to extract latest commit and tag.
+# Add root certificates to be used for ssl/tls.
+# Add openssl to build self-signed certificates.
+RUN apk add --update --no-cache ca-certificates git openssl
+
+# Setup the working directory
+WORKDIR /app/
+
+# Copy go mod file and download dependencies.
+COPY go.* ./
+# RUN go mod download -x
+
+# Copy all files to the container’s workspace.
+COPY . .
+
+# Execute the self-signed certificate generation script.
+RUN chmod +x ./scripts/generate.certs.sh
+RUN ./scripts/generate.certs.sh
+
+# Build the api executable inside the container.
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o api-server -a -ldflags "-extldflags '-static' -X 'main.GitCommit=$(git rev-list -1 HEAD)' -X 'main.GitTag=$(git describe --tags --abbrev=0)'" ./cmd/api/main.go
+
+# Final stage with minimalist image.
+FROM scratch
+
+LABEL maintainer="Jerome Amon"
+
+# Copy our static executable to the new container root.
+COPY --from=builder ./app/api-server ./api-server
+
+# Copy certificates and assets and configuration files.
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+COPY --from=builder ./app/api.server.crt ./assets/certs/
+COPY --from=builder ./app/api.server.key ./assets/certs/
+
+COPY --from=builder ./app/assets/data ./assets/data
+COPY --from=builder ./app/assets/static ./assets/static
+COPY --from=builder ./app/assets/templates ./assets/templates
+
+COPY --from=builder ./app/config/config.yaml ./config/config.yaml
+
+EXPOSE 8095
+ENTRYPOINT [ "./api-server" ]
