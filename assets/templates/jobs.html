@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/x-icon" href="/favicon.ico">
+        <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300&display=swap" rel="stylesheet">
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+        <title>Jobs Search</title>
+    </head>
+<style>
+body {
+  margin: 0;
+  font-size:16px;
+  font-family: 'Lato', sans-serif;
+  line-height: 1.43;
+  
+}
+table, td {
+  border:1px solid black;
+  border-spacing: 12px;
+}
+
+</style>
+<body onload="initMap()">
+
+<table style="height:90%;width:90%; position:absolute; margin:15px; text-align:left;">
+  <tr>
+    <td style="border: none; background-color: #D3D3D3; text-align: center;">
+      <form name="searchBox" action="/jobs/search" method="get">
+        {{if eq .title ""}}
+        <input style="text-align: center; font-size: 18px; margin-top: 0; padding: 15px; display: inline-block; width: 80%; height: 100%;" 
+          type="search" id="title" name="title" placeholder="Search For Jobs ...">
+        {{else}}
+        <input style="text-align: center; font-size: 18px; margin-top: 0; padding: 15px; display: inline-block; width: 80%; height: 100%;" 
+          type="search" id="title" name="title" value="{{.title}}" placeholder="Search For Jobs ...">
+        {{end}}
+        
+        <input style="visibility: hidden;" type="text" id="lat" name="lat" value="{{.userLatitude}}">
+        <input style="visibility: hidden;" type="text" id="lng" name="lng" value="{{.userLongitude}}">
+        <input type="submit" style="visibility: hidden;">
+      </form>
+    </td>
+      <td colspan="3" rowspan="6">
+        <div id="map" style="width: 100%; height: 400px; display: block;"></div>
+    </td>
+  </tr>
+  <tr>
+    {{if .isSearch}}
+    <td style="border: none; background-color: none;font-weight: bold;">Search Results:</td>
+    {{else}}
+    <td style="border: none; background-color: none;font-weight: bold;">Available Openings:</td>
+    {{end}}
+    
+  </tr>
+  
+  {{range .availableJobs}}
+  <tr>
+    {{if eq .ID "#"}}
+    <td style="padding-left: 10px; background-color: #F0F0F0;"><a href="#">{{.Title}}</a></td>
+    {{else}}
+    <td style="padding-left: 10px; background-color: #F0F0F0;"><a href="/jobs/view/{{.ID}}">{{.Title}}</a></td>
+    {{end}}
+  </tr>
+  {{end}}
+  <tr>
+    <td style="background-color: #F0F0F0;"><a href="/jobs/view/{{.lastAvailableJob.ID}}">{{.lastAvailableJob.Title}}</a></td>
+    <td colspan="3" style="border: none; background-color: none;font-weight: bold;">Nearest jobs within 5km radius</td>
+  </tr>
+  <tr>
+    <td style="text-align: center; font-weight: bold;"><a style="text-align: center;" href="">View More Similar Jobs</a></td>
+    {{range .nearestJobs}}
+    {{if eq .ID "#"}}
+    <td style="padding-left: 10px; background-color: #F0F0F0;">{{.Title}}</td>
+    {{else}}
+    <td style="background-color: #F0F0F0;"><a href="/jobs/view/{{.ID}}">{{.Title}}</a></td>
+    {{end}}
+    {{end}}
+  </tr>
+</table>
+
+<script type="text/javascript">
+  function initMap() {
+    const pos = { lat: {{.userLatitude}}, lng: {{.userLongitude}}};
+    var mapOptions = {
+      zoom: 10,
+      center: pos,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+
+    var locations = [
+      {{range .availableJobs}}
+      [{{.Title}}, {{.Latitude}}, {{.Longitude}}],
+      {{end}}
+      [{{.lastAvailableJob.Title}}, {{.lastAvailableJob.Latitude}}, {{.lastAvailableJob.Longitude}}],
+    ];
+    
+    var map = new google.maps.Map(document.getElementById("map"), mapOptions);
+    var infowindow = new google.maps.InfoWindow();
+    var marker, i;
+
+    // place user current location.
+    marker = new google.maps.Marker({
+      icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
+      position: pos,
+      map: map,
+      title: 'Current Location.'
+    });
+
+    google.maps.event.addListener(marker, 'click', (function(marker) {
+      return function() {
+        infowindow.setContent('Current Location.');
+        infowindow.open(map, marker);
+      }
+    })(marker));
+
+    // places all jobs locations
+    for (i = 0; i < locations.length; i++) {  
+      marker = new google.maps.Marker({
+        position: new google.maps.LatLng(locations[i][1], locations[i][2]),
+        map: map,
+        title: locations[i][0]
+      });
+    
+    google.maps.event.addListener(marker, 'click', (function(marker, i) {
+      return function() {
+        infowindow.setContent(locations[i][0]);
+        infowindow.open(map, marker);
+      }
+    })(marker, i));
+  }
+}
+</script>
+<script defer src="https://maps.googleapis.com/maps/api/js?key={{.mapsAPIKEY}}&callback=initMap"></script>
+</body>
+</html>

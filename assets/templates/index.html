@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/x-icon" href="/favicon.ico">
+        <title>Index - Jobs Search</title>
+    </head>
+<body onload="getCurrentLocation()">
+<script>
+   // get user geolocation details.
+  function getCurrentLocation() {
+    if(navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(processCurrentPosition, processError)
+    } else {
+      // no support for Geolocation
+      window.location.href = "/error?issue=location-no-support";
+    }
+  }
+
+  // send user position to server.
+  function processCurrentPosition(position) {
+    window.location.href = "/jobs?lat="+position.coords.latitude+"&lng="+position.coords.longitude;
+  }
+
+  // send error code to server.
+  function processError(error) {
+  switch(error.code) {
+    case error.PERMISSION_DENIED:
+      // x.innerHTML = "User denied the request for Geolocation."
+      window.location.href = "/error?issue=location-perm-denied";
+      break;
+    case error.POSITION_UNAVAILABLE:
+      // x.innerHTML = "Location information is unavailable."
+      window.location.href = "/error?issue=location-pos-unvailable";
+      break;
+    case error.TIMEOUT:
+      // x.innerHTML = "The request to get user location timed out."
+      window.location.href = "/error?issue=location-timeout";
+      break;
+    case error.UNKNOWN_ERROR:
+      // x.innerHTML = "An unknown error occurred."
+      window.location.href = "/error?issue=location-unknown";
+      break;
+  }
+}
+</script>
+</body>
+</html>

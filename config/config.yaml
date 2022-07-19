@@ -1,0 +1,24 @@
+# Database settings
+database:
+  csv_file: "./assets/data/location_data_2000.csv"
+
+# Web server settings
+web_server:
+  host: "0.0.0.0"
+  port: "8090"
+  certs_file: "./assets/certs/web.server.crt"
+  key_file: "./assets/certs/web.server.key"
+
+# Rest API Server settings
+api_server:
+  host: "0.0.0.0"
+  port: "8095"
+  certs_file: "./assets/certs/api.server.crt"
+  key_file: "./assets/certs/api.server.key"
+
+# Search results settings
+search_results:
+  number: 5
+  radius: 5000
+
+maps_api_key: "AIzaSyCATuw7UkKhl7uhz5_siyzXfnuB0ClEEkM"
